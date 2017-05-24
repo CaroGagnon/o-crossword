@@ -897,7 +897,7 @@ OCrossword.prototype.assemble = function assemble() {
 				target = e.target;
 				blockHighlight = true;
 
-				if(e.target === magicInput){
+				if(e.target === magicInput || e.target.nodeName === 'TD'){
 					currentTarget = magicInput;
 				}
 
