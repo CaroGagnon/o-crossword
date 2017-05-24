@@ -293,6 +293,7 @@ OCrossword.prototype.assemble = function assemble() {
 
 			const container = document.createElement('div');
 			container.setAttribute('id', 'virtualKeyboard');
+			container.dataset.active = 'false';
 
 			keys.forEach(row => {
 
@@ -385,8 +386,8 @@ OCrossword.prototype.assemble = function assemble() {
 
 		let currentTarget;
 
-		const keyboard = constructKeyboard(magicInput, cluesEl);
-		document.body.appendChild(keyboard);
+		document.body.appendChild(constructKeyboard(magicInput, cluesEl));
+		const keyboard = document.querySelector('#virtualKeyboard');
 
 		this.addEventListener(magicInput, 'keydown', function (e) {
 			if (!isAndroid()) {
@@ -527,9 +528,9 @@ OCrossword.prototype.assemble = function assemble() {
 					desiredTarget.value = '';
 					return;
 				}
-			
+
 			}
-				
+
 			if(!isAndroid()) {
 
 				if(!isVirtualKeyboard){
@@ -641,6 +642,8 @@ OCrossword.prototype.assemble = function assemble() {
 				syncPartialClue(magicInput.value, magicInputNextEls, index);
 				if (magicInputNextEls[index + direction]) {
 					return takeInput(magicInputNextEls[index + direction], magicInputNextEls);
+				} else {
+					keyboard.dataset.active = 'false';
 				}
 			}
 
@@ -839,6 +842,7 @@ OCrossword.prototype.assemble = function assemble() {
 			magicInput.blur();
 			magicInput.style.display = 'none';
 			currentTarget = undefined;
+			keyboard.dataset.active = 'false';
 		}
 
 		function syncPartialClue(letter, src, index) {
@@ -917,6 +921,7 @@ OCrossword.prototype.assemble = function assemble() {
 				clueDetails.answerLength = defEl.getAttribute('data-o-crossword-answer-length');
 
 				if (!toggleClueSelection(clueDetails)) {
+					keyboard.dataset.active = 'false';					
 					return;
 				}
 
@@ -928,6 +933,8 @@ OCrossword.prototype.assemble = function assemble() {
 			if (target === magicInput) {
 				target = magicInputTargetEl;
 			}
+
+			keyboard.dataset.active = 'true';
 
 			if (gridEl.contains(target)) {
 				let cell = target;

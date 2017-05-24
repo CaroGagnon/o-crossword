@@ -16,6 +16,7 @@
     justify-content: space-between;
 	padding: 1em;
 	box-sizing: border-box;
+	transform: translateY(100%);
 
 	.row{
 		// background: red;
@@ -40,6 +41,10 @@
 		}
 
 	}
+}
+
+#virtualKeyboard[data-active="true"]{
+	transform: translateY(0%);
 }
 
 @mixin oCrosswordType {
