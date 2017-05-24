@@ -115,6 +115,11 @@ function buildGrid(
 				tempInput.setAttribute('maxlength', 1);
 				tempInput.setAttribute('data-link-identifier', 'A' + across[0] + '-' + i);
 				tempPartial.appendChild(tempInput);
+
+				if(isAndroid()){
+					tempInput.setAttribute('readonly', 'true');
+				}
+
 			}
 
 			acrossEl.appendChild(tempLi);
@@ -380,6 +385,10 @@ OCrossword.prototype.assemble = function assemble() {
 		let magicInputNextEls = null;
 		magicInput.type = 'text';
 		magicInput.style.display = 'none';
+
+		if(isAndroid()){
+			magicInput.setAttribute('readonly', 'true');
+		}
 
 		let blockHighlight = false;
 		let previousClueSelection = null;
@@ -657,6 +666,7 @@ OCrossword.prototype.assemble = function assemble() {
 
 		const clueInputs = cluesEl.querySelectorAll('input');
 		this.addEventListener(clueInputs, 'focus', function(e){
+
 			magicInput.value ='';
 			magicInput.style.display = 'none';
 
@@ -892,6 +902,7 @@ OCrossword.prototype.assemble = function assemble() {
 		}
 
 		const onTap = function onTap(e) {
+
 			let target;
 			let clueDetails;
 			let isNavigation = false;
@@ -907,7 +918,6 @@ OCrossword.prototype.assemble = function assemble() {
 
 			} else {
 				let defEl;
-
 				if(e.target.nodeName === 'A') {
 					defEl = navigateClues(e);
 					isNavigation = true;
@@ -1025,7 +1035,7 @@ OCrossword.prototype.assemble = function assemble() {
 		this.addEventListener(window, 'scroll', function(){
 
 			if(keyboard.dataset.active === 'true'){
-				keyboard.dataset.active = 'false';
+				keyboard.dataset.active === 'false';
 			}
 
 		}.bind(this));
