@@ -921,7 +921,7 @@ OCrossword.prototype.assemble = function assemble() {
 				clueDetails.answerLength = defEl.getAttribute('data-o-crossword-answer-length');
 
 				if (!toggleClueSelection(clueDetails)) {
-					keyboard.dataset.active = 'false';					
+					keyboard.dataset.active = 'false';
 					return;
 				}
 
@@ -1022,7 +1022,13 @@ OCrossword.prototype.assemble = function assemble() {
 
 		onResize(true);
 		this.addEventListener(window, 'resize', this.onResize);
+		this.addEventListener(window, 'scroll', function(){
 
+			if(keyboard.dataset.active === 'true'){
+				keyboard.dataset.active = 'false';
+			}
+
+		}.bind(this));
 	}
 
 	if(isiOS()) {

@@ -17,6 +17,7 @@
 	padding: 1em;
 	box-sizing: border-box;
 	transform: translateY(100%);
+	transition: transform 0.2s ease-in-out;
 
 	.row{
 		// background: red;
