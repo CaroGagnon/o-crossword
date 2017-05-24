@@ -280,9 +280,54 @@ OCrossword.prototype.assemble = function assemble() {
 	}
 
 	if (cluesEl) {
-		let currentClue = -1;
 
-		const cluesUlEls = Array.from(cluesEl.querySelectorAll('ul'));
+		function constructKeyboard(input){
+
+			const keys = [
+				['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p'],
+				['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l'],
+				['z', 'x', 'c', 'v', 'b', 'n', 'm']
+			];
+
+			const keyboardFrag = document.createDocumentFragment();
+
+			const container = document.createElement('div');
+			container.setAttribute('id', 'virtualKeyboard');
+
+			keys.forEach(row => {
+
+				const div = document.createElement('div');
+				div.classList.add('row');
+
+				row.forEach(key => {
+					const span = document.createElement('span');
+					span.innerText = key.toUpperCase();
+					span.dataset.keycode = key.charCodeAt(0);
+					span.classList.add('key');
+
+					span.addEventListener('click', function(){
+						// console.log(this.dataset.keycode);
+
+						const e = new CustomEvent('keydown', { 'detail' : Number( this.dataset.keycode ) });
+						input.dispatchEvent(e);
+
+					}, false);
+
+					div.appendChild(span);
+
+				});
+
+				container.appendChild(div);
+
+			});
+
+			keyboardFrag.appendChild(container);
+			
+			return keyboardFrag;
+
+		}
+
+		let currentClue = -1;
 
 		const gridWrapper = document.createElement('div');
 		gridWrapper.classList.add('o-crossword-grid-wrapper');
@@ -334,9 +379,16 @@ OCrossword.prototype.assemble = function assemble() {
 		let blockHighlight = false;
 		let previousClueSelection = null;
 
+		const keyboard = constructKeyboard(magicInput);
+		document.body.appendChild(keyboard);
+
 		this.addEventListener(magicInput, 'keydown', function (e) {
 			if (!isAndroid()) {
 				e.preventDefault();
+			}
+
+			if(e.keyCode === undefined && e.detail !== undefined){
+				e.keyCode = e.detail;
 			}
 
 			if (e.keyCode === 13) { //enter
@@ -544,7 +596,7 @@ OCrossword.prototype.assemble = function assemble() {
 					return takeInput(magicInputNextEls[index + direction], magicInputNextEls);
 				}
 			}
-
+			debugger;
 			unsetClue(magicInputNextEls.length, direction);
 			magicInputNextEls = null;
 			magicInput.value = '';
@@ -909,6 +961,7 @@ OCrossword.prototype.assemble = function assemble() {
 
 		onResize(true);
 		this.addEventListener(window, 'resize', this.onResize);
+
 	}
 
 	if(isiOS()) {
