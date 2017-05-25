@@ -312,13 +312,25 @@ OCrossword.prototype.assemble = function assemble() {
 					span.classList.add('key');
 
 					span.addEventListener('click', function(){
-						// console.log(this.dataset.keycode);
+
+						let e;
+
 						if(currentTarget === magicInput){
-							const e = new CustomEvent( 'keydown', { 'detail' : { isVirtual: true, value : Number( this.dataset.keycode ) } } );
+							e = new CustomEvent( 'keydown', {
+								'detail' : {
+									value : Number( this.dataset.keycode )
+								}
+							});
 							magicInput.dispatchEvent(e);
 						} else {
-							const e = new CustomEvent('keydown', { 'detail' : { isVirtual : true, target : currentTarget, value : key } });
+							e = new CustomEvent('keydown', {
+								'detail' : {
+									target : currentTarget,
+									value : key
+								}
+							});
 							clueInput.dispatchEvent(e);
+
 						}
 
 					}, false);
@@ -402,13 +414,9 @@ OCrossword.prototype.assemble = function assemble() {
 			if (!isAndroid()) {
 				e.preventDefault();
 			}
-			const isVirtualKeyboard = e.detail.isVirtual;
+			const isVirtualKeyboard = requiresVirtualKeyboard();
 
 			currentTarget = magicInput;
-
-			/*if(isVirtualKeyboard){
-				e.keyCode = e.detail.value;
-			}*/
 
 			if(!isVirtualKeyboard){
 
@@ -481,7 +489,7 @@ OCrossword.prototype.assemble = function assemble() {
 				timer = 0;
 			}
 
-			const isVirtualKeyboard = e.detail.isVirtual !== undefined;
+			const isVirtualKeyboard = requiresVirtualKeyboard();
 
 			const desiredTarget = isVirtualKeyboard ? e.detail.target : e.target;
 
@@ -944,7 +952,9 @@ OCrossword.prototype.assemble = function assemble() {
 				target = magicInputTargetEl;
 			}
 
-			keyboard.dataset.active = 'true';
+			if(requiresVirtualKeyboard()){
+				keyboard.dataset.active = 'true';
+			}
 
 			if (gridEl.contains(target)) {
 				let cell = target;
@@ -1086,4 +1096,22 @@ function isiOS() {
 function isAndroid() {
 	var android = navigator.userAgent.toLowerCase().indexOf("android") > -1;
 	return android;
+}
+
+function requiresVirtualKeyboard(){
+
+	if(isiOS()){
+		return true
+	}
+
+	if(isAndroid()){
+		return true;
+	}
+
+	if(window.innerWidth < 500){
+		return true;
+	}
+
+	return false;
+
 }
