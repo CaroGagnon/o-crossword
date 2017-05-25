@@ -237,7 +237,7 @@
 		}
 
 		.o-crossword-user-answer {
-			input {
+			span {
 				border:0;
 				display: inline-block;
 				border-bottom: 1px solid #000;
@@ -251,10 +251,10 @@
 				border-radius: 0;
 				padding: 0;
 
-				&:focus {
-					outline: none;
-					border-bottom: 2px solid rgb(158, 47, 80);
-				}
+			}
+			span[data-active="true"]{
+				outline: none;
+				border-bottom: 2px solid rgb(158, 47, 80);
 			}
 
 			.separator {
