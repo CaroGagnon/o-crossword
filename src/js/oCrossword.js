@@ -203,7 +203,7 @@ function buildGrid(
 			tempInput.cousins = getCousins(this, 'clue', direction[0], dWord, Number( tempInput.dataset.offset ));
 
 			tempInput.addEventListener('click', function(){
-				
+
 				// getCousins(this, 'clue', direction[0], dWord, Number( tempInput.dataset.offset ))
 
 				document.querySelectorAll('span[data-active="true"]').forEach(span => {
@@ -216,12 +216,12 @@ function buildGrid(
 			tempInput.addEventListener('keypress', function(e){
 				this.value = e.detail.value || String.fromCharCode(e.keyCode);
 				this.cousins.td.textContent = this.value;
-				
+
 				const nextInput = tempPartial.querySelectorAll('input')[ Number(this.dataset.offset) + 1 ];
 				if(nextInput !== undefined){
 					nextInput.focus();
 				}
-			
+
 			}, false);
 
 			let count = 0;
