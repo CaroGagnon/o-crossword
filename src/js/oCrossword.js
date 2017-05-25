@@ -23,7 +23,12 @@ function getCousins(element, type, num, direction, offset){
 		let TD;
 		let answerTDs = [];
 
+		let top;
+		let left;
+
 		if(direction === 'across'){
+
+			top = Number ( gridInput.parentNode.getAttribute('data-tr-index') );
 
 			const TDs = gridInput.parentNode.querySelectorAll('td');
 			let offsetIsSet = false;
@@ -39,6 +44,7 @@ function getCousins(element, type, num, direction, offset){
 				if(offsetIsSet){
 					if(count === offset){
 						TD = td;
+						left = idx;
 					}
 
 					count += 1;
@@ -65,6 +71,9 @@ function getCousins(element, type, num, direction, offset){
 			;
 
 			const columnStart = Number( gridInput.parentNode.getAttribute('data-tr-index') );
+
+			top = columnStart + offset;
+			left = acrossOffset;
 
 			const TDs = Array.from(document.querySelectorAll('table tr'))
 				.filter( (el, idx) => {
@@ -94,7 +103,11 @@ function getCousins(element, type, num, direction, offset){
 		return {
 			'td' : TD,
 			'answerTDs' : answerTDs,
-			'offset' : offset
+			'offset' : offset,
+			'coordinates' : {
+				top,
+				left
+			}
 		};
 
 	}
@@ -108,6 +121,19 @@ function getCousins(element, type, num, direction, offset){
 	}
 
 	return null;
+
+}
+
+function setValue(value, top, left){
+
+	const TD = document.querySelector(`tr[data-tr-index="${top}"] td[data-left="${left}"]`);
+	const inputsToFillIn = Array.from(document.querySelectorAll(`input[data-affectedby="${top}-${left}"]`))
+
+	inputsToFillIn.forEach(input => {
+		input.value = value;
+	})
+
+	TD.textContent = value;
 
 }
 
@@ -160,7 +186,7 @@ function buildGrid(
 		tr.setAttribute('data-tr-index', i);
 		for (let j=0; j<cols; j++) {
 			const td = document.createElement('td');
-
+			td.dataset.left = j;
 			tr.appendChild(td);
 			if (gridnums[i][j]) {
 				td.dataset.oCrosswordNumber = gridnums[i][j];
@@ -201,10 +227,9 @@ function buildGrid(
 			tempInput.dataset.offset = i;
 			tempInput.maxLength = 1;
 			tempInput.cousins = getCousins(this, 'clue', direction[0], dWord, Number( tempInput.dataset.offset ));
+			tempInput.dataset.affectedby = `${tempInput.cousins.coordinates.top}-${tempInput.cousins.coordinates.left}`
 
 			tempInput.addEventListener('click', function(){
-
-				// getCousins(this, 'clue', direction[0], dWord, Number( tempInput.dataset.offset ))
 
 				document.querySelectorAll('span[data-active="true"]').forEach(span => {
 					span.dataset.active = 'false';
@@ -214,8 +239,8 @@ function buildGrid(
 			}, false);
 
 			tempInput.addEventListener('keypress', function(e){
-				this.value = e.detail.value || String.fromCharCode(e.keyCode);
-				this.cousins.td.textContent = this.value;
+
+				setValue(e.detail.value || String.fromCharCode(e.keyCode), tempInput.cousins.coordinates.top, tempInput.cousins.coordinates.left);
 
 				const nextInput = tempPartial.querySelectorAll('input')[ Number(this.dataset.offset) + 1 ];
 				if(nextInput !== undefined){
@@ -313,14 +338,6 @@ function buildGrid(
 			});
 		});
 	}
-}
-
-function getRelativeCenter(e, el) {
-	const bb = el.getBoundingClientRect();
-	e.relativeCenter = {
-		x: e.center.x - bb.left,
-		y: e.center.y - bb.top,
-	};
 }
 
 function OCrossword(rootEl) {
