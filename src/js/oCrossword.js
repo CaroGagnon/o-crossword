@@ -21,24 +21,34 @@ function getCousins(element, type, num, direction, offset){
 		const gridInput = document.body.querySelector('[data-o-crossword-number="' + num + '"]');
 
 		let TD;
+		let answerTDs = [];
 
 		if(direction === 'across'){
+
 			const TDs = gridInput.parentNode.querySelectorAll('td');
-			let answerStartOffset = 0;
+			let offsetIsSet = false;
 			let count = 0;
 
 			for(let idx = 0; idx < TDs.length; idx += 1){
 				const td = TDs[idx];
 
 				if(td === gridInput){
-					answerStartOffset = idx;
+					offsetIsSet = true;
 				}
 
-				if(count === offset){
-					TD = td;
-					break
-				} else {
+				if(offsetIsSet){
+					if(count === offset){
+						TD = td;
+					}
+
 					count += 1;
+
+					if(!td.classList.contains('empty')){
+						answerTDs.push(td);
+					} else {
+						break;
+					}
+
 				}
 
 			}
@@ -56,19 +66,35 @@ function getCousins(element, type, num, direction, offset){
 
 			const columnStart = Number( gridInput.parentNode.getAttribute('data-tr-index') );
 
-			TD = Array.from(document.querySelectorAll('table tr'))
+			const TDs = Array.from(document.querySelectorAll('table tr'))
 				.filter( (el, idx) => {
 					return idx >= columnStart;
 				})
 				.map(row => {
 					return row.querySelector(`td:nth-child(${acrossOffset + 1})`);
-				})[offset]
+				})
 			;
+
+			TD = TDs[offset];
+
+			for(let x = 0; x < TDs.length; x += 1){
+
+				const td = TDs[x];
+
+				if(!td.classList.contains('empty')){
+					answerTDs.push(td);
+				} else {
+					break;
+				}
+
+			}
 
 		}
 
 		return {
-			'td' : TD
+			'td' : TD,
+			'answerTDs' : answerTDs,
+			'offset' : offset
 		};
 
 	}
@@ -169,6 +195,61 @@ function buildGrid(
 		downWrapper.appendChild(downEl);
 		cluesEl.appendChild(downWrapper);
 
+		function constructInput(i, tempPartial, direction, dWord){
+
+			let tempInput = document.createElement('input');
+			tempInput.dataset.offset = i;
+			tempInput.maxLength = 1;
+			tempInput.cousins = getCousins(this, 'clue', direction[0], dWord, Number( tempInput.dataset.offset ));
+
+			tempInput.addEventListener('click', function(){
+				
+				// getCousins(this, 'clue', direction[0], dWord, Number( tempInput.dataset.offset ))
+
+				document.querySelectorAll('span[data-active="true"]').forEach(span => {
+					span.dataset.active = 'false';
+				});
+				tempInput.dataset.active = 'true';
+
+			}, false);
+
+			tempInput.addEventListener('keypress', function(e){
+				this.value = e.detail.value || String.fromCharCode(e.keyCode);
+				this.cousins.td.textContent = this.value;
+				
+				const nextInput = tempPartial.querySelectorAll('input')[ Number(this.dataset.offset) + 1 ];
+				if(nextInput !== undefined){
+					nextInput.focus();
+				}
+			
+			}, false);
+
+			let count = 0;
+
+			if(direction[3].length > 1) {
+				for(var j = 0; j < direction[3].length; ++j) {
+					if(j%2 === 1) {
+						count += parseInt(direction[3][j-1]);
+						let separator = document.createElement('span');
+						separator.classList.add('separator');
+
+						if(direction[3][j] === '-') {
+							separator.innerHTML = '&mdash;';
+						} else {
+							separator.innerHTML = '&nbsp;';
+						}
+
+						if(i === count) {
+							tempPartial.appendChild(separator);
+						}
+					}
+				}
+			}
+
+			return tempInput;
+
+		}
+
 		clues.across.forEach(function acrossForEach(across, index) {
 			const tempLi = document.createElement('li');
 			const tempSpan = document.createElement('span');
@@ -183,44 +264,7 @@ function buildGrid(
 			tempLi.dataset.oCrosswordClueId = index;
 
 			for(var i = 0; i < answerLength; ++i) {
-				let tempInput = document.createElement('span');
-				tempInput.dataset.offset = i;
-				tempInput.cousins = getCousins(this, 'clue', across[0], 'across', Number( tempInput.dataset.offset ));
-
-				tempInput.addEventListener('click', function(){
-
-					console.log(this.cousins);
-
-					document.querySelectorAll('span[data-active="true"]').forEach(span => {
-						span.dataset.active = 'false';
-					});
-					tempInput.dataset.active = 'true';
-
-				}, false);
-
-				let count = 0;
-
-				if(across[3].length > 1) {
-					for(var j = 0; j < across[3].length; ++j) {
-						if(j%2 === 1) {
-							count += parseInt(across[3][j-1]);
-							let separator = document.createElement('span');
-							separator.classList.add('separator');
-
-							if(across[3][j] === '-') {
-								separator.innerHTML = '&mdash;';
-							} else {
-								separator.innerHTML = '&nbsp;';
-							}
-
-							if(i === count) {
-								tempPartial.appendChild(separator);
-							}
-						}
-					}
-				}
-
-				tempPartial.appendChild(tempInput);
+				tempPartial.appendChild( constructInput(i, tempPartial, across, 'across') );
 			}
 
 			acrossEl.appendChild(tempLi);
@@ -242,44 +286,7 @@ function buildGrid(
 			tempLi.dataset.oCrosswordClueId = clues.across.length + index;
 
 			for(var i = 0; i < answerLength; ++i) {
-				let tempInput = document.createElement('span');
-				tempInput.dataset.offset = i;
-				tempInput.cousins = getCousins(this, 'clue', down[0], 'down', Number( tempInput.dataset.offset ));
-
-				tempInput.addEventListener('click', function(){
-
-					console.log(this.cousins);
-
-					document.querySelectorAll('span[data-active="true"]').forEach(span => {
-						span.dataset.active = 'false';
-					});
-					tempInput.dataset.active = 'true';
-
-				}, false);
-				
-				let count = 0;
-
-				if(down[3].length > 1) {
-					for(var j = 0; j < down[3].length; ++j) {
-						if(j%2 === 1) {
-							count += parseInt(down[3][j-1]);
-							let separator = document.createElement('span');
-							separator.classList.add('separator');
-
-							if(down[3][j] === '-') {
-								separator.innerHTML = '&mdash;';
-							} else {
-								separator.innerHTML = '&nbsp;';
-							}
-
-							if(i === count) {
-								tempPartial.appendChild(separator);
-							}
-						}
-					}
-				}
-
-				tempPartial.appendChild(tempInput);
+				tempPartial.appendChild( constructInput(i, tempPartial, down, 'down') );
 			}
 
 			downEl.appendChild(tempLi);
