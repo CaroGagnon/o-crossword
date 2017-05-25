@@ -916,11 +916,11 @@ OCrossword.prototype.assemble = function assemble() {
 			let isNavigation = false;
 			blockHighlight = false;
 
-			if (e.target.nodeName === 'TD' || e.target.nodeName === 'INPUT') {
-				target = e.target;
+			if (e.target.nodeName === 'TD' || e.target.nodeName === 'INPUT' || e.detail.clueSelect) {
+				target = e.detail.clueSelect || e.target;
 				blockHighlight = true;
 
-				if(e.target === magicInput || e.target.nodeName === 'TD'){
+				if(e.target === magicInput || e.target.nodeName === 'TD' || e.detail.clueSelect){
 					currentTarget = magicInput;
 				}
 
@@ -1033,7 +1033,18 @@ OCrossword.prototype.assemble = function assemble() {
 				}
 			}
 
-			return cluesEl.querySelector('li[data-o-crossword-clue-id="'+ currentClue +'"]');
+			const currentClueElement = cluesEl.querySelector('li[data-o-crossword-clue-id="'+ currentClue +'"]');
+
+			const fakeClick = new CustomEvent('click', {
+				detail : {
+					clueSelect : currentClueElement.querySelector('input')
+				}
+			});
+
+			this.rootEl.dispatchEvent(fakeClick);
+
+			return currentClueElement;
+
 		}.bind(this);
 
 		this.addEventListener(cluesEl, 'mousemove', e => highlightGridByCluesEl(e.target));
