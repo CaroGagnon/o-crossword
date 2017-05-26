@@ -124,14 +124,14 @@ function getCousins(element, type, num, direction, offset){
 
 }
 
-function setValue(value, top, left){
+function setValue(rootElement, value, top, left){
 
-	const TD = document.querySelector(`tr[data-tr-index="${top}"] td[data-left="${left}"]`);
-	const inputsToFillIn = Array.from(document.querySelectorAll(`input[data-affectedby="${top}-${left}"]`))
+	const TD = rootElement.querySelector(`tr[data-tr-index="${top}"] td[data-left="${left}"]`);
+	const inputsToFillIn = Array.from(rootElement.querySelectorAll(`input[data-affectedby="${top}-${left}"]`))
 
 	inputsToFillIn.forEach(input => {
 		input.value = value;
-	})
+	});
 
 	TD.textContent = value;
 
@@ -196,6 +196,27 @@ function buildGrid(
 				const emptyMarker = emptyCell.cloneNode(true);
 				emptyMarker.classList.remove('hidden');
 				td.appendChild(emptyMarker);
+			} else {
+				td.addEventListener('click', function(){
+
+					const top = this.parentNode.getAttribute('data-tr-index');
+					const left = this.getAttribute('data-left');
+					console.log(top, left);
+
+					const MI = rootEl.querySelector('.o-crossword-magic-input');
+					MI.style.display = 'block';
+					MI.style.left = this.offsetLeft + 'px';
+					MI.style.top = this.offsetTop + 'px';
+
+					MI.dataset.affecting = `${top}-${left}`;
+
+					if(!isMobile()){
+						MI.focus();
+					}
+
+					console.log(MI);
+
+				}, false);
 			}
 		}
 		gridEl.appendChild(tr);
@@ -240,7 +261,7 @@ function buildGrid(
 
 			tempInput.addEventListener('keypress', function(e){
 
-				setValue(e.detail.value || String.fromCharCode(e.keyCode), tempInput.cousins.coordinates.top, tempInput.cousins.coordinates.left);
+				setValue(rootEl, e.detail.value || String.fromCharCode(e.keyCode), tempInput.cousins.coordinates.top, tempInput.cousins.coordinates.left);
 
 				const nextInput = tempPartial.querySelectorAll('input')[ Number(this.dataset.offset) + 1 ];
 				if(nextInput !== undefined){
@@ -428,7 +449,7 @@ OCrossword.prototype.assemble = function assemble() {
 	const gridEl = this.rootEl.querySelector('table');
 	const cluesEl = this.rootEl.querySelector('ul.o-crossword-clues');
 	const gridMap = new Map();
-	let currentlySelectedGridItem = null;
+
 	for (const el of cluesEl.querySelectorAll('[data-o-crossword-number]')) {
 		const els = getGridCellsByNumber(gridEl, el.dataset.oCrosswordNumber,el.dataset.oCrosswordDirection, el.dataset.oCrosswordAnswerLength);
 		els.forEach(cell => {
@@ -444,9 +465,6 @@ OCrossword.prototype.assemble = function assemble() {
 	}
 
 	if (cluesEl) {
-		let currentClue = -1;
-
-		const cluesUlEls = Array.from(cluesEl.querySelectorAll('ul'));
 
 		const gridWrapper = document.createElement('div');
 		gridWrapper.classList.add('o-crossword-grid-wrapper');
@@ -493,6 +511,13 @@ OCrossword.prototype.assemble = function assemble() {
 
 		magicInput.type = 'text';
 		magicInput.style.display = 'none';
+
+		const that = this;
+
+		magicInput.addEventListener('keydown', function(e){
+			const affecting = this.dataset.affecting.split('-');
+			setValue(that.rootEl, e.detail.value || String.fromCharCode(e.keyCode), affecting[0], affecting[1]);
+		}, false);
 
 		const onResize = function onResize(init) {
 			var isMobile = false;
@@ -594,4 +619,14 @@ function isiOS() {
 function isAndroid() {
 	var android = navigator.userAgent.toLowerCase().indexOf("android") > -1;
 	return android;
+}
+
+function isMobile(){
+
+	if(isAndroid() || isiOS() /*|| window.innerWidth < 600*/){
+		return true;
+	}
+
+	return false;
+
 }
