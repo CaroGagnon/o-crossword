@@ -116,7 +116,7 @@ function buildGrid(
 				tempInput.setAttribute('data-link-identifier', 'A' + across[0] + '-' + i);
 				tempPartial.appendChild(tempInput);
 
-				if(isAndroid()){
+				if(isAndroid() || isiOS()){
 					tempInput.setAttribute('readonly', 'true');
 				}
 
@@ -288,10 +288,21 @@ OCrossword.prototype.assemble = function assemble() {
 
 		function constructKeyboard(magicInput, clueInput){
 
+			const specials = {
+				space : {
+					character : '_',
+					action : 'skip'
+				},
+				backspace : {
+					character : '←',
+					action : 'delete'
+				}
+			};
+
 			const keys = [
 				['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p'],
 				['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l'],
-				['z', 'x', 'c', 'v', 'b', 'n', 'm']
+				['special:space', 'z', 'x', 'c', 'v', 'b', 'n', 'm', 'special:backspace']
 			];
 
 			const keyboardFrag = document.createDocumentFragment();
@@ -311,24 +322,39 @@ OCrossword.prototype.assemble = function assemble() {
 					span.dataset.keycode = key.charCodeAt(0);
 					span.classList.add('key');
 
+					if( key.indexOf('special:') > -1 ){
+						const specialType = key.split('special:')[1];
+						span.innerText = specials[specialType].character;
+						span.dataset.special = specialType;
+					}
+
 					span.addEventListener('click', function(){
 
 						let e;
+						const details = {};
+
+						if(this.dataset.special !== undefined){
+							details.action = specials[this.dataset.special].action;
+						}
 
 						if(currentTarget === magicInput){
+
+							details.value = Number( this.dataset.keycode );
+
 							e = new CustomEvent( 'keydown', {
-								'detail' : {
-									value : Number( this.dataset.keycode )
-								}
+								detail : details
 							});
+
 							magicInput.dispatchEvent(e);
 						} else {
+
+							details.target = currentTarget;
+							details.value = key;
+
 							e = new CustomEvent('keydown', {
-								'detail' : {
-									target : currentTarget,
-									value : key
-								}
-							});
+								detail : details
+							})
+
 							clueInput.dispatchEvent(e);
 
 						}
@@ -414,11 +440,10 @@ OCrossword.prototype.assemble = function assemble() {
 			if (!isAndroid()) {
 				e.preventDefault();
 			}
-			const isVirtualKeyboard = requiresVirtualKeyboard();
 
 			currentTarget = magicInput;
-
-			if(!isVirtualKeyboard){
+			// Detect if event was sent by virtual keyboard or not
+			if(e.keyCode !== undefined){
 
 				if (e.keyCode === 13) { //enter
 					magicInputNextEls = null;
@@ -454,12 +479,27 @@ OCrossword.prototype.assemble = function assemble() {
 				}
 
 			} else {
-				magicInput.value = String.fromCharCode(e.detail.value);
+				// debugger;
+				if(e.detail.action !== undefined){
+
+					if(e.detail.action === 'skip'){
+						return progress();
+					}
+
+					if(e.detail.action === 'delete'){
+						magicInput.value = '';
+						return progress(-1);
+					}
+
+				} else {
+					magicInput.value = String.fromCharCode(e.detail.value);
+				}
+
 			}
 
 			if(!isAndroid()) {
 
-				if(!isVirtualKeyboard){
+				if(e.keyCode !== undefined){
 
 					magicInput.value = String.fromCharCode(e.keyCode);
 
@@ -489,18 +529,32 @@ OCrossword.prototype.assemble = function assemble() {
 				timer = 0;
 			}
 
-			const isVirtualKeyboard = requiresVirtualKeyboard();
+			const isVirtualKeyboard = e.keyCode === undefined;
 
 			const desiredTarget = isVirtualKeyboard ? e.detail.target : e.target;
 
-			if(isVirtualKeyboard){
-				desiredTarget.value = e.detail.value.toUpperCase();
+			if(e.keyCode === undefined){
+
+				if(e.detail.action !== undefined){
+
+					if(e.detail.action === 'skip'){
+						return nextInput(desiredTarget, 1);
+					}
+
+					if(e.detail.action === 'delete'){
+						return nextInput(desiredTarget, -1);
+					}
+
+				} else {
+					desiredTarget.value = e.detail.value.toUpperCase();
+				}
+
 				desiredTarget.blur();
 			}
 
 			let gridSync = getCellFromClue(desiredTarget);
 
-			if(!isVirtualKeyboard){
+			if(e.keyCode !== undefined){
 
 				if (e.keyCode === 13) { //enter
 					desiredTarget.blur();
@@ -550,7 +604,7 @@ OCrossword.prototype.assemble = function assemble() {
 
 			if(!isAndroid()) {
 
-				if(!isVirtualKeyboard){
+				if(e.keyCode !== undefined){
 
 					desiredTarget.value = String.fromCharCode(e.keyCode);
 
@@ -582,11 +636,26 @@ OCrossword.prototype.assemble = function assemble() {
 			let currentInput = inputID.split('-')[1];
 			let newInput = (direction === 1)?++currentInput:--currentInput;
 
+			Array.from(document.body.querySelectorAll('input.focussed')).map(item => {
+				item.classList.remove('focussed');
+			});
+
 			if(newInput >= 0 && newInput < inputGroup.length) {
 				let next = cluesEl.querySelector('input[data-link-identifier="' + inputID.split('-')[0] +'-'+ newInput+'"]');
-				// next.focus();
-				next.select();
+
+				if(!requiresVirtualKeyboard()){
+					next.focus();
+					next.select();
+				}
+
 				currentTarget = next;
+				next.classList.add('focussed');
+
+				if(direction === -1 && requiresVirtualKeyboard()){
+					source.value = '';
+					getCellFromClue(next).grid.textContent = '';
+				}
+
 			} else {
 				source.blur();
 				let def = source.parentElement.parentElement;
@@ -742,6 +811,7 @@ OCrossword.prototype.assemble = function assemble() {
 
 			if(isMobile && !!init) {
 				clueNavigationNext.click();
+				// rootEl.querySelector('tr td').click();
 			}
 
 			const d1 = cluesEl.getBoundingClientRect();
@@ -922,6 +992,15 @@ OCrossword.prototype.assemble = function assemble() {
 
 				if(e.target === magicInput || e.target.nodeName === 'TD' || e.detail.clueSelect){
 					currentTarget = magicInput;
+				}
+
+				if(requiresVirtualKeyboard()){
+					e.preventDefault();
+					currentTarget.blur();
+					keyboard.dataset.active = 'true';
+					if(e.target.nodeName === 'INPUT'){
+						e.target.classList.add('focussed');
+					}
 				}
 
 			} else {

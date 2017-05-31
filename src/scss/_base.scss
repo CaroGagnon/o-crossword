@@ -3,21 +3,36 @@
 /// @link http://registry.origami.ft.com/components/o-crossword
 ////
 
+html, body{
+	height: 100%;
+	overflow-y: scroll;
+	-webkit-overflow-scrolling: touch;
+}
+
 #virtualKeyboard {
 	position: fixed;
     width: 100%;
     // height: 150px;
     background: #333;
-    bottom: 0;
+    top: 100%;
     left: 0;
-    display: flex;
+    display: none;
     flex-direction: column;
     align-items: center;
     justify-content: space-between;
-	padding: 1em;
+	padding: 1em 2px;
 	box-sizing: border-box;
-	transform: translateY(100%);
-	transition: transform 0.2s ease-in-out;
+	transform: translateY(0%);
+	// transition: transform 0.2s ease-in-out;
+
+	*{
+		-webkit-touch-callout: none;
+		-webkit-user-select: none;
+		-khtml-user-select: none;
+		-moz-user-select: none;
+		-ms-user-select: none;
+		user-select: none;
+	}
 
 	.row{
 		// background: red;
@@ -44,7 +59,8 @@
 }
 
 #virtualKeyboard[data-active="true"]{
-	transform: translateY(0%);
+	transform: translateY(-100%);
+	display: flex;
 }
 
 @mixin oCrosswordType {
@@ -295,7 +311,7 @@
 				border-radius: 0;
 				padding: 0;
 
-				&:focus {
+				&:focus, &.focussed{
 					outline: none;
 					border-bottom: 2px solid rgb(158, 47, 80);
 				}
